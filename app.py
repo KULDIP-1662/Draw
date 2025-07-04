@@ -9,6 +9,7 @@ import os
 from datetime import datetime
 from typing import Dict, List
 from uuid import uuid4
+from similarity_score import calculate_similarity
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -27,6 +28,7 @@ async def get_home(request: Request):
 def get_session():
     # Try to reuse the last session
     if session_counter:
+        print(f"Current sessions: {sessions}")
         last = session_counter[-1]
         if len (sessions.get (last, [])) < 2:
             return {"session_id": last}
@@ -44,10 +46,9 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     if session_id not in sessions:
         sessions[session_id] = []
 
-    user_index = len(sessions[session_id])
-    role = f"user{user_index + 1}"
-
     sessions[session_id].append(websocket)
+    role = "user1" if len(sessions[session_id]) == 1 else "user2"
+
     await websocket.send_json({"type": "assign_role", "role": role})
 
     try:
@@ -62,6 +63,8 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             del sessions[session_id]
 
 
+import json
+
 @app.post("/upload-canvas")
 async def upload_canvas(data: dict = Body(...)):
     image_data = data.get("imageData")
@@ -74,11 +77,50 @@ async def upload_canvas(data: dict = Body(...)):
     os.makedirs("saved", exist_ok=True)
     filename = f"{session_id}_{user_id}.png"
     save_path = os.path.join("saved", filename)
-
+    print(f"Saving image to {save_path}")
     with open(save_path, "wb") as f:
         f.write(decoded)
 
-    return JSONResponse(content={"message": "✅ Saved", "filename": filename})
+    # Step 1: Calculate score vs main image
+    try:
+        print ("🧪 Comparing:", save_path)
+        score = calculate_similarity(save_path)
+
+    except Exception as e:
+        print(f"Error calculating similarity for {filename}: {e}")
+    print(f'Similarity score for {filename}: {score}')
+
+    # Step 2: Save or update scores
+    os.makedirs("scores", exist_ok=True)
+    score_file = os.path.join("scores", f"{session_id}.json")
+
+    scores = {}
+    if os.path.exists(score_file):
+        with open(score_file, "r") as f:
+            scores = json.load(f)
+
+    scores[user_id] = score
+
+    with open(score_file, "w") as f:
+        json.dump(scores, f)
+
+    # Step 3: Check if both scores are present
+    if "user1" in scores and "user2" in scores:
+        winner = "user1" if scores["user1"] > scores["user2"] else "user2"
+        return JSONResponse(content={
+            "status": "done",
+            "message": "Both players finished!",
+            "score": score,
+            "both_scores": scores,
+            "winner": winner
+        })
+    else:
+        return JSONResponse(content={
+            "status": "waiting",
+            "message": f"Score saved. Waiting for other player.",
+            "score": score
+        })
+
 
 # @app.post("/find_score")
 # async def

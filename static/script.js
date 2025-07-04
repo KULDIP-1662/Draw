@@ -114,7 +114,7 @@ function drawRemote(type, x, y) {
 
 saveYourBtn.addEventListener('click', () => {
   if (!userRole || !sessionId) {
-    alert("❌ You're not assigned yet. Try again in a few seconds.");
+    alert("❌ You're not assigned yet.");
     return;
   }
 
@@ -131,7 +131,16 @@ saveYourBtn.addEventListener('click', () => {
   })
     .then(res => res.json())
     .then(data => {
-      alert("✅ Saved as " + data.filename);
+      if (data.status === "waiting") {
+        alert(`✅ Score Saved: ${data.score}%\nWaiting for your opponent...`);
+      } else if (data.status === "done") {
+        const yourScore = data.both_scores[userRole];
+        const otherUser = userRole === 'user1' ? 'user2' : 'user1';
+        const opponentScore = data.both_scores[otherUser];
+        const isWinner = data.winner === userRole;
+
+        alert(`🎯 Game Over!\nYou scored: ${yourScore}%\nOpponent scored: ${opponentScore}%\n🏆 ${isWinner ? "You win!" : "Opponent wins!"}`);
+      }
     })
     .catch(err => {
       alert("❌ Save failed");
