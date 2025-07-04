@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Side-by-Side Drawing</title>
+  <style>
+    #boards {
+      display: flex;
+      gap: 20px;
+    }
+    canvas {
+      border: 2px solid black;
+    }
+    .label {
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Side-by-Side Collaborative Drawing</h2>
+  <div id="boards">
+    <div>
+      <div class="label">🖊️ You</div>
+      <canvas id="yourCanvas" width="400" height="400"></canvas>
+      <button id="saveYourBtn">💾 Save Your Board</button>
+    </div>
+    <div>
+      <div class="label">👀 Friend</div>
+      <canvas id="friendCanvas" width="400" height="400"></canvas>
+      <button id="saveFriendBtn" disabled>💾 Save Friend Board</button>
+    </div>
+  </div>
+  <script src="/static/script.js"></script>
+</body>
+</html>
