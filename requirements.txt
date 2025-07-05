@@ -2,3 +2,6 @@ fastapi
 uuid
 scikit-image
 opencv-python
+uvicorn[standard]
+jinja2
+pymongo

@@ -14,7 +14,7 @@ def calculate_similarity(image1_path):
     """
     # Load images
 
-    main_image = r"C:\Users\kpanchal\PycharmProjects\temp\static\real_image.png"
+    main_image = "static/real_image.png"
     try:
         img1 = cv2.imread(image1_path, cv2.IMREAD_GRAYSCALE)
         img2 = cv2.imread(main_image, cv2.IMREAD_GRAYSCALE)
@@ -37,6 +37,6 @@ def calculate_similarity(image1_path):
 
 if __name__ == "__main__":
 
-    image_path = r"C:\Users\kpanchal\PycharmProjects\temp\static\given_image.png"
+    image_path = "static/given_image.png"
     score = calculate_similarity(image_path)
     print(f"Similarity score: {score}")

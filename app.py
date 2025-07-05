@@ -10,6 +10,9 @@ from datetime import datetime
 from typing import Dict, List
 from uuid import uuid4
 from similarity_score import calculate_similarity
+import random
+import string
+from db import sessions_col
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -23,6 +26,58 @@ session_counter = []  # order of session creation
 @app.get("/", response_class=HTMLResponse)
 async def get_home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+@app.post("/host-session")
+async def create_session(data: dict = Body(...)):
+    name = data.get("name")
+
+    if not name:
+        return JSONResponse(status_code=400, content={"error": "Name is required"})
+
+    # Generate unique session code
+    while True:
+        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        if not sessions_col.find_one({"_id": code}):
+            break
+
+    session_doc = {
+        "_id": code,
+        "internal_id": f"session_{uuid4().hex[:6]}",
+        "players": [
+            { "name": name, "joined": True }
+        ],
+        "status": "waiting",
+        "created_at": datetime.utcnow()
+    }
+
+    sessions_col.insert_one(session_doc)
+    print(f"✅ Created session: {code} for {name}")
+    return {"session_code": code}
+ 
+@app.post("/join-session")
+async def join_session(data: dict = Body(...)):
+    name = data.get("name")
+    code = data.get("code")
+
+    session = sessions_col.find_one({"_id": code})
+
+    if not session:
+        return JSONResponse(status_code=404, content={"error": "Session not found"})
+
+    if len(session["players"]) >= 2:
+        return JSONResponse(status_code=400, content={"error": "Session is full"})
+
+    # Add player 2
+    sessions_col.update_one(
+        { "_id": code },
+        { "$push": { "players": { "name": name, "joined": True } },
+          "$set": { "status": "active" }
+        }
+    )
+
+    print(f"🤝 {name} joined session: {code}")
+    return {"session_code": code}
+
 
 @app.get ("/get-session")
 def get_session():
@@ -121,6 +176,6 @@ async def upload_canvas(data: dict = Body(...)):
             "score": score
         })
 
-
-# @app.post("/find_score")
-# async def
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
