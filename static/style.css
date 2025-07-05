@@ -19,7 +19,7 @@ body {
   border-radius: 15px; */
 }
 
-.input {
+#input_value {
   margin: 20px 30px 5px 30px;
   height: 70px;
   width: 10cm;
@@ -32,7 +32,7 @@ body {
   color: #000;
 }
 
-.btn1 {
+#btn1 {
   background-color: #78c6f7;
   border: none;
   padding: 16px 40px;
@@ -43,7 +43,7 @@ body {
   font-size: 20px;
 }
 
-.btn2 {
+#btn2 {
   background-color: #78c6f7;
   border: none;
   padding: 16px 40px;
