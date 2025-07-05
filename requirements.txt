@@ -1,0 +1,4 @@
+fastapi
+uuid
+scikit-image
+opencv-python
