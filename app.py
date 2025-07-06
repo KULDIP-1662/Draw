@@ -13,8 +13,18 @@ from similarity_score import calculate_similarity
 import random
 import string
 from db import sessions_col
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or restrict to ["http://127.0.0.1:5500"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -30,7 +40,8 @@ async def get_home(request: Request):
 @app.post("/host-session")
 async def create_session(data: dict = Body(...)):
     name = data.get("name")
-
+    print("data", data)
+    print("name" ,name)
     if not name:
         return JSONResponse(status_code=400, content={"error": "Name is required"})
 
@@ -50,6 +61,7 @@ async def create_session(data: dict = Body(...)):
         "created_at": datetime.utcnow()
     }
 
+    print("db row", session_doc)
     sessions_col.insert_one(session_doc)
     print(f"✅ Created session: {code} for {name}")
     return {"session_code": code}
@@ -64,19 +76,21 @@ async def join_session(data: dict = Body(...)):
     if not session:
         return JSONResponse(status_code=404, content={"error": "Session not found"})
 
-    if len(session["players"]) >= 2:
-        return JSONResponse(status_code=400, content={"error": "Session is full"})
+    if len(session["players"]) < 2:
+        
 
     # Add player 2
-    sessions_col.update_one(
-        { "_id": code },
-        { "$push": { "players": { "name": name, "joined": True } },
-          "$set": { "status": "active" }
-        }
-    )
+        sessions_col.update_one(
+            { "_id": code },
+            { "$push": { "players": { "name": name, "joined": True } },
+            "$set": { "status": "active" }
+            }
+        )
 
-    print(f"🤝 {name} joined session: {code}")
-    return {"session_code": code}
+        print(f"🤝 {name} joined session: {code}")
+        return {"success": 'session joined'}
+    else:
+        return JSONResponse(status_code=400, content={"error": "Session is full"})
 
 
 @app.get ("/get-session")
