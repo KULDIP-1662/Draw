@@ -2,10 +2,6 @@ from pymongo import MongoClient
 
 # Use local MongoDB
 MONGO_URI = "mongodb://192.168.66.168:27017"
-<<<<<<< HEAD
-
-=======
->>>>>>> viren-branch
 
 client = MongoClient(MONGO_URI)
 db = client["draw_game"]         # database name
