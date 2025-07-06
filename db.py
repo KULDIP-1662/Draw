@@ -1,7 +1,8 @@
 from pymongo import MongoClient
 
 # Use local MongoDB
-MONGO_URI = "mongodb://localhost:27017"
+MONGO_URI = "mongodb://192.168.66.168:27017"
+
 
 client = MongoClient(MONGO_URI)
 db = client["draw_game"]         # database name
