@@ -13,3 +13,4 @@ if __name__ == "__main__":
     print("Sessions:")
     for session in sessions_col.find():
         print(session)
+

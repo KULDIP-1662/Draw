@@ -35,14 +35,18 @@ session_counter = []  # order of session creation
 
 @app.get("/", response_class=HTMLResponse)
 async def get_home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("main_page.html", {"request": request})
+
+@app.get("/play", response_class=HTMLResponse)
+async def get_index(request: Request):
+    return templates.TemplateResponse("play.html", {"request": request})
 
 @app.post("/host-session")
 async def create_session(data: dict = Body(...)):
-    name = data.get("name")
-    print("data", data)
-    print("name" ,name)
-    if not name:
+
+    user_name = data.get("name")
+
+    if not user_name:
         return JSONResponse(status_code=400, content={"error": "Name is required"})
 
     # Generate unique session code
@@ -55,16 +59,15 @@ async def create_session(data: dict = Body(...)):
         "_id": code,
         "internal_id": f"session_{uuid4().hex[:6]}",
         "players": [
-            { "name": name, "joined": True }
+            { "name": user_name, "joined": True }
         ],
         "status": "waiting",
         "created_at": datetime.utcnow()
     }
 
-    print("db row", session_doc)
     sessions_col.insert_one(session_doc)
-    print(f"✅ Created session: {code} for {name}")
-    return {"session_code": code}
+
+    return {"session_code": code, "internal_id": session_doc["internal_id"]}
  
 @app.post("/join-session")
 async def join_session(data: dict = Body(...)):
@@ -78,7 +81,6 @@ async def join_session(data: dict = Body(...)):
 
     if len(session["players"]) < 2:
         
-
     # Add player 2
         sessions_col.update_one(
             { "_id": code },
@@ -88,25 +90,22 @@ async def join_session(data: dict = Body(...)):
         )
 
         print(f"🤝 {name} joined session: {code}")
-        return {"success": 'session joined'}
+        return {"internal_id": session["_id"], "name": name}
     else:
         return JSONResponse(status_code=400, content={"error": "Session is full"})
 
 
-@app.get ("/get-session")
-def get_session():
-    # Try to reuse the last session
-    if session_counter:
-        print(f"Current sessions: {sessions}")
-        last = session_counter[-1]
-        if len (sessions.get (last, [])) < 2:
-            return {"session_id": last}
+@app.get("/session-status/{internal_id}")
+async def session_status(internal_id: str):
 
-    # Otherwise create new session
-    new_id = f"session_{uuid4 ().hex[:6]}"
-    sessions[new_id] = []
-    session_counter.append (new_id)
-    return {"session_id": new_id}
+    session = sessions_col.find_one({"internal_id": internal_id})
+
+    if not session:
+        return {"status": "invalid"}
+
+    if session["status"] == "active":
+        return {"status": "active"}
+
 
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
@@ -190,6 +189,6 @@ async def upload_canvas(data: dict = Body(...)):
             "score": score
         })
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
