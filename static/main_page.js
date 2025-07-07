@@ -7,6 +7,7 @@ let codeInputShown = false;
 
 // HOST PARTY
 host_btn.addEventListener("click", () => {
+
   help_area.classList.add("show");
   // help_text.classList.add("show")
   const user_name = name_input.value.trim();
@@ -17,6 +18,12 @@ host_btn.addEventListener("click", () => {
     help_text.style.color = "red";
     return;
   }
+
+  join_btn.disabled = true; // Disable join button while hosting
+  help_text.textContent = "Creating session..."; // Show loading message
+  help_text.style.color = "green"
+  // help_text.style.transition = "pink 0.3s ease";
+  // help_text.style.transitionDuration = "10s";
 
   fetch("http://127.0.0.1:8000/host-session", {
     method: "POST",
@@ -55,6 +62,8 @@ join_btn.addEventListener("click", () => {
     help_text.style.color = "red";
     return;
   }
+
+  host_btn.disabled = true;
 
   if (!codeInputShown) {
     const codeBox = document.getElementById("code_box");
